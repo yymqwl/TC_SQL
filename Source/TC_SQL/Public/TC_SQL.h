@@ -5,7 +5,9 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FTC_SQLModule : public IModuleInterface
+//测试版本使用FDefaultGameModuleImpl
+//稳定后使用IModuleInterface
+class FTC_SQLModule : public FDefaultGameModuleImpl
 {
 public:
 
