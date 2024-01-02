@@ -37,7 +37,7 @@ void USQLSubsystem::Initialize(const FSociDefinition* sociDefinition)
 {
 	check(sociDefinition);
 	PSociDefinition = sociDefinition;
-	SQLSubsys_State = ESQLSubsys_State::ENone;
+	SetSQL_State(ESQLSubsys_State::ENone);
 	IRetry = SQLSubSys_Retry_Nub;
 	TC_SQL_LOG(TEXT("Initialize:%d_%s"),PSociDefinition->SQLType,*PSociDefinition->DefName.ToString());
 
@@ -92,9 +92,8 @@ void USQLSubsystem::Open()
 	//auto sql = (ANSICHAR*)StringCast<UTF8CHAR>(*PSociDefinition->ConString).Get();
 	//std::string(TCHAR_TO_UTF8(*PSociDefinition->ConString));
 	//(ANSICHAR*)FTCHARToUTF8((const TCHAR*)str).Get()
-	{
-		SQLSubsys_State = ESQLSubsys_State::EConnecting;
-	}
+
+	SetSQL_State(ESQLSubsys_State::EConnecting);
 	
 	FFunctionGraphTask::CreateAndDispatchWhenReady([this]()
 	{
@@ -105,17 +104,24 @@ void USQLSubsystem::Open()
 				FScopeLock SL(&SQL_CS);
 				Sql_Session.open(Get_backend_factory(),  TCHAR_TO_UTF8(*PSociDefinition->ConString));
 			}
-			SQLSubsys_State = ESQLSubsys_State::EConnected;//直接算连上
+			SetSQL_State(ESQLSubsys_State::EConnected);//直接算连上
 			TC_SQL_LOG(TEXT("Connected:"));
 			UpdateActiveTime();
 		}
 		catch (soci::soci_error const& e)
 		{
-			SQLSubsys_State = ESQLSubsys_State::ENone;
+			SetSQL_State(ESQLSubsys_State::ERetry);
 			TC_SQL_LOG(TEXT("Connect Error: %s"),e.what());
 		}
 	});
 }
+
+void USQLSubsystem::SetSQL_State(const ESQLSubsys_State& state)
+{
+	FScopeLock SL(&State_CS);
+	SQLSubsys_State = state;
+}
+
 void USQLSubsystem::Close()
 {
 	if (SQLSubsys_State != ESQLSubsys_State::EConnected )
@@ -135,7 +141,7 @@ void USQLSubsystem::Close()
 		{
 			TC_SQL_LOG(TEXT("Close Error: %s"),e.what());
 		}
-		SQLSubsys_State = ESQLSubsys_State::ENone;//直接算连上
+		SetSQL_State(ESQLSubsys_State::ENone);//直接算断开,但是还会继续连
 	});
 }
 
@@ -143,16 +149,17 @@ void USQLSubsystem::Close()
 
 void USQLSubsystem::Tick()
 {
-	if (SQLSubsys_State == ESQLSubsys_State::EFail)//失败重试
+	if (SQLSubsys_State == ESQLSubsys_State::ERetry)//失败重试
 	{
 		if (IRetry>0 )
 		{
 			--IRetry;
-			SQLSubsys_State = ESQLSubsys_State::ENone;
+			SetSQL_State(ESQLSubsys_State::ENone);
 			TC_SQL_LOG(TEXT("Retry Nub: %d"),IRetry);
 		}
 		else
 		{
+			SetSQL_State(ESQLSubsys_State::EFail);
 			TC_SQL_LOG(TEXT("Retry Nub Not enough"));
 		}
 	}

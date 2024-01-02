@@ -7,7 +7,7 @@
 
 //测试版本使用FDefaultGameModuleImpl
 //稳定后使用IModuleInterface
-class FTC_SQLModule : public FDefaultGameModuleImpl
+class FTC_SQLModule : public IModuleInterface
 {
 public:
 

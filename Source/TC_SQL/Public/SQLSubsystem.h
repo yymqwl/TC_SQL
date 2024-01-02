@@ -71,10 +71,12 @@ public:
 			try
 			{
 				auto str_sql = std::string( TCHAR_TO_UTF8(*sql));
+
 				
-				FScopeLock SL(&this->SQL_CS);
-				
+				//FScopeLock SL(&this->SQL_CS);
+				this->SQL_CS.Lock();
 				soci::rowset<soci::row> rs=(this->Sql_Session.prepare << str_sql );
+				this->SQL_CS.Unlock();//只锁定操作
 				//Sql_Session << str_sql, soci::into(r);
 				
 				//SOCI_LOG(TEXT("Query Size: %d"), r.size());
@@ -145,13 +147,15 @@ public:
 			try
 			{
 				//auto sql = TCHAR_TO_UTF8(*sql_tb);
-				FScopeLock SL(&this->SQL_CS);
 				for (auto pt_row : ptr_SqlTable->Rows)
 				{
 					FString sql_str = ptr_SqlTable->GetInsertSQLString(pt_row);
 					//SOCI_LOG(TEXT("%s"),*sql_str);
 					//std::string sql_str = std::string( UTF8_TO_TCHAR(ptr_SqlTable->GetInsertSQLString()));
-					this->Sql_Session << std::string( TCHAR_TO_UTF8( *sql_str ));//以utf8格式插入
+					{
+						FScopeLock SL(&this->SQL_CS);
+						this->Sql_Session << std::string( TCHAR_TO_UTF8( *sql_str ));//以utf8格式插入
+					}
 				}
 				this->UpdateActiveTime();
 				//SOCI_LOG(TEXT("query success"));
@@ -185,12 +189,14 @@ public:
 		{
 			try
 			{
-				FScopeLock SL(&this->SQL_CS);
 				for (auto pt_row : ptr_SqlTable->Rows)
 				{
 					FString sql_str = ptr_SqlTable->GetDeleteSQLString(pt_row);
 					//SOCI_LOG(TEXT("delete %s"),*sql_str);
-					this->Sql_Session << std::string( TCHAR_TO_UTF8( *sql_str ));//以utf8格式插入
+					{
+						FScopeLock SL(&this->SQL_CS);
+						this->Sql_Session << std::string( TCHAR_TO_UTF8( *sql_str ));//以utf8格式插入
+					}
 				}
 				this->UpdateActiveTime();
 				//SOCI_LOG(TEXT("query success"));
@@ -225,12 +231,15 @@ public:
 		{
 			try
 			{
-				FScopeLock SL(&this->SQL_CS);
+				
 				for (auto pt_row : ptr_SqlTable->Rows)
 				{
 					FString sql_str = ptr_SqlTable->GetUpdateSQLString(pt_row);
 					//SOCI_LOG(TEXT("update %s"),*sql_str);
-					this->Sql_Session << std::string( TCHAR_TO_UTF8( *sql_str ));//以utf8格式插入
+					{
+						FScopeLock SL(&this->SQL_CS);
+						this->Sql_Session << std::string( TCHAR_TO_UTF8( *sql_str ));//以utf8格式插入
+					}
 				}
 				this->UpdateActiveTime();
 				//SOCI_LOG(TEXT("query success"));
@@ -269,6 +278,7 @@ public:
 	virtual void Ping_SQL();//定时Ping 防止断开连接
 	//TFuture<bool> GetTime();
 
+	void SetSQL_State(const ESQLSubsys_State& state);
 	
 	
 	//////////////需要重载的数据
@@ -284,9 +294,10 @@ protected:
 	const FSociDefinition* PSociDefinition;//定义名称
 	ESQLSubsys_State  SQLSubsys_State;//线程安全
 	FCriticalSection SQL_CS;//线程同步锁
+	FCriticalSection State_CS;//状态同步锁
 	FTimerHandle TH_Tick;
 	int8  IRetry;//重试次数
-	double LastActiveTime;
+	double LastActiveTime;//std::atomic 暂时不用线程同步,没必要
 	
 public:
 	soci::session Sql_Session;//回话

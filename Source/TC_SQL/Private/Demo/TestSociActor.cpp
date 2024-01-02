@@ -2,6 +2,8 @@
 
 
 #include "Demo/TestSociActor.h"
+
+#include "SociSubsystem.h"
 #include "SQLSubsystem.h"
 #include "Demo/Person.h"
 // Sets default values
@@ -18,10 +20,11 @@ void ATestSociActor::BeginPlay()
 		
 
 	
-	auto ssy =GetGameInstance()->GetSubsystem<USociSubsystem>();
+	USociSubsystem* ssy =GetGameInstance()->GetSubsystem<USociSubsystem>();
 	if (ssy)
 	{
-		PSQLSubsys = Cast<USQLSubsystem>( ssy->Find_SQLSubsystem(TEXT("数据库1")));
+		//ssy->Find_SQLSubsystem(TEXT("数据库1"));
+		PSQLSubsys = Cast<USQLSubsystem>(   ssy->Find_SQLSubsystem(TEXT("数据库1")));
 	}
 	
 	//FindFProperty<>()
@@ -30,10 +33,13 @@ void ATestSociActor::Test1()
 {
 	TC_SQL_LOG(TEXT("Test1 Call:%f"),	FPlatformTime::Seconds());
 
+	/*
+	std::atomic<int>  f2=  33;
 
 	
-
-
+	TC_SQL_LOG(TEXT("Test1 Call:%d"),	f2.load());
+	f2.store(44);
+	TC_SQL_LOG(TEXT("Test1 Call:%d"),	f2.load());*/
 	/*
 	TSharedPtr< SQLTableWrapper<FPerson> > f = MakeShareable(new SQLTableWrapper<FPerson>);
 	f->Rows.Add( MakeShareable(new SQLRowWrapper<FPerson>()) );
@@ -103,15 +109,12 @@ void ATestSociActor::Test1()
 	str.LeftInline(str.Len()-1);
 	str +=")";
 	*/
-
-
+	//std::atomic<int>  f2=32;
 	
+	//TC_SQL_LOG(TEXT("Test1 Call From Query :%s"));
 	//ELogVerbosity::Error;
 	
 	//UE_LOG(SQL_Log,ELogVerbosity::Error,TEXT("111111"));
-
-	
-	
 	
 	PSQLSubsys->Query<FPerson>(TEXT("select * from Person"),[](TSharedRef<SQLTableWrapper<FPerson>> SqlTable,TSharedRef<FSoci_Error> error)
 	{

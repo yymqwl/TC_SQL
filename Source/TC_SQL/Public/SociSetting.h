@@ -60,6 +60,7 @@ enum class ESQLSubsys_State
 	ENone,//最开始状态
 	EConnecting,//连接中
 	EConnected,//连接上
+	ERetry,//失败
 	EFail,//失败
 };
 ENUM_CLASS_FLAGS(ESQLSubsys_State);
