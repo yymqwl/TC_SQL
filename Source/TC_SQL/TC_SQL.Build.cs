@@ -19,7 +19,7 @@ public class TC_SQL : ModuleRules
 	public TC_SQL(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
+		bEnableExceptions = true;
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"Core",
 			"CoreUObject",

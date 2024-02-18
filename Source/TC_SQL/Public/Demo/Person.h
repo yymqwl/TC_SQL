@@ -14,7 +14,7 @@ struct FPerson : public FSQLRow
 	GENERATED_BODY();
 public:
 	UPROPERTY()
-	int Id;
+	int32 Id = 0;
 	UPROPERTY()
 	FString Name;
 
