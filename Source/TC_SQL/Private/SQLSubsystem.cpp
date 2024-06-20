@@ -111,7 +111,7 @@ void USQLSubsystem::Open()
 		catch (soci::soci_error const& e)
 		{
 			SetSQL_State(ESQLSubsys_State::ERetry);
-			TC_SQL_LOG(TEXT("Connect Error: %s"),e.what());
+			TC_SQL_LOG(TEXT("Connect Error: %hs"),e.what());
 		}
 	});
 }
@@ -139,7 +139,7 @@ void USQLSubsystem::Close()
 		}
 		catch (soci::soci_error const& e)
 		{
-			TC_SQL_LOG(TEXT("Close Error: %s"),e.what());
+			TC_SQL_LOG(TEXT("Close Error: %hs"),e.what());
 		}
 		SetSQL_State(ESQLSubsys_State::ENone);//直接算断开,但是还会继续连
 	});
@@ -215,7 +215,7 @@ void USQLSubsystem::Ping_SQL()
 		}
 		catch (std::runtime_error const& e)
 		{
-			TC_SQL_LOG(TEXT("Ping Error: %s"),e.what());
+			TC_SQL_LOG(TEXT("Ping Error: %hs"),e.what());
 		}
 	});
 }
